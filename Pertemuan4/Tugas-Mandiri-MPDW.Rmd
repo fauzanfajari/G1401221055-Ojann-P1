@@ -1,0 +1,202 @@
+---
+title: "Tugas Mandiri MPDW"
+author: "Fauzan Fajari_G1401221055"
+output: rmdformats::readthedown
+date: "2024-09-16"
+---
+## Library
+```{r}
+library(stats)
+library(TSA)
+library(utils)
+```
+
+## White Noise
+```{r}
+#White Noise
+n=300
+wn <- rnorm(n)
+```
+
+## Model MA(2)
+```{r}
+#Bangkitkan model MA(2) dengan 𝜃1 = 0.4 dan 𝜃2 = 0.6 sebanyak 300 data (Manual dan dengan arima.sim)
+set.seed(2403)
+theta1=0.4
+theta2=0.6
+ma=rep(0,n)
+ma[1] <- wn[1]
+ma[2] <- wn[2]+theta1*wn[1]
+for (i in 3:n){
+  ma[i]=wn[i]+theta1*wn[i-1]+theta2*wn[i-2]
+}
+ma=ts(ma)
+ma2 <- arima.sim(list(order=c(0,0,2), ma=c(0.4,0.6)), n=n)
+
+```
+
+## Plot MA(2)
+```{r}
+#Buat plot time series, plot ACF, plot PACF dan plot EACF. Idenifikasi apakah data tersebut stasioner
+par(mfrow=c(2,2))
+plot(ma,main="Time Series MA(2)")
+acf(ma,main="ACF MA(2)")
+pacf(ma,main="PACF MA(2)")
+eacf(ma,ar.max=3)
+```
+Berdasarkan plot time series, plot ACF, plot PACF dan plot EACF, terlihat data yang dibangkitkan bergerak fluktuatif pada nilai tengah tertentu. sehingga dapat dinyatakan bahwa data tersebut stasioner.
+
+## Scatterplot MA(2)
+```{r}
+#Buat scatterplot antara 𝑌𝑡 dengan 𝑌𝑡−1, 𝑌𝑡 dengan 𝑌𝑡−2 serta 𝑌𝑡 dengan 𝑌𝑑−3
+yt_ma1 <- ma[-1]
+yt1_ma <- ma[-n]
+plot(yt_ma1,yt1_ma,main="Scatterplot Yt vs Yt-1")
+
+yt_ma2<- ma[-c(1,2)]
+yt2_ma <- ma[-c(n-1,n)]
+plot(yt_ma2,yt2_ma,main="Scatterplot Yt vs Yt-2")
+
+yt_ma3 <- ma[-c(1,2,3)]
+yt3_ma <- ma[-c(n-2,n-1,n)]
+plot(yt_ma3,yt3_ma,main="Scatterplot Yt vs Yt-3")
+```
+## Nilai Autokorelasi MA(2)
+```{r}
+#Hitung nilai autokorelasi dari data yang dibangkitkan
+cor(yt_ma1,yt1_ma)
+cor(yt_ma2,yt2_ma)
+cor(yt_ma3,yt3_ma)
+
+#yg teoritis gunakan rumus yg ada di ppt
+cor_ma_1=(-theta1+(theta1*theta2))/(1+theta1^2+theta2^2)
+cor_ma_2=-theta2/(1+theta1^2+theta2^2)
+cor_ma_3=0
+cor_ma_1
+cor_ma_2
+cor_ma_3
+```
+## Model AR(2)
+```{r}
+#Bangkitkan model AR(2) dengan 𝜙1 = 0.5 dan 𝜙2 = 0.2 sebanyak 300 data (Manual dan dengan arima.sim)
+set.seed(2403)
+phi1=0.5
+phi2=0.2
+ar=rep(0,n)
+ar[1] <- wn[1]
+ar[2] <- phi1*ar[1]+wn[2]
+for (i in 3:n){
+  ar[i]=phi1*ar[i-1]+phi2*ar[i-2]+wn[i]
+}
+ar=ts(ar)
+ar2 <- arima.sim(list(order=c(2,0,0), ar=c(0.5,0.2)), n=n)
+```
+
+## Plot AR(2)
+```{r}
+#Buat plot time series, plot ACF, plot PACF dan plot EACF. Idenifikasi apakah data tersebut stasioner
+par(mfrow=c(2,2))
+plot(ar,main="Time Series AR(2)")
+acf(ar,main="ACF AR(2)")
+pacf(ar,main="PACF AR(2)")
+eacf(ar,ar.max=3)
+```
+Berdasarkan plot time series, plot ACF, plot PACF dan plot EACF, terlihat data yang dibangkitkan bergerak fluktuatif pada nilai tengah tertentu. sehingga dapat dinyatakan bahwa data tersebut stasioner.
+
+## Scatterplot AR(2)
+```{r}
+#Buat scatterplot antara 𝑌𝑡 dengan 𝑌𝑡−1, 𝑌𝑡 dengan 𝑌𝑡−2 serta 𝑌𝑡 dengan 𝑌𝑑−3
+yt_ar1 <- ar[-1]
+yt1_ar <- ar[-n]
+plot(yt_ar1,yt1_ar,main="Scatterplot Yt vs Yt-1")
+
+yt_ar2<- ar[-c(1,2)]
+yt2_ar <- ar[-c(n-1,n)]
+plot(yt_ar2,yt2_ar,main="Scatterplot Yt vs Yt-2")
+
+yt_ar3 <- ar[-c(1,2,3)]
+yt3_ar <- ar[-c(n-2,n-1,n)]
+plot(yt_ar3,yt3_ar,main="Scatterplot Yt vs Yt-3")
+```
+## Nilai Autokorelasi AR(2)
+```{r}
+#Hitung nilai autokorelasi dari data yang dibangkitkan
+cor(yt_ar1,yt1_ar)
+cor(yt_ar2,yt2_ar)
+cor(yt_ar3,yt3_ar)
+
+#yg teoritis gunakan rumus yg ada di ppt
+cor_ar_1 = phi1/(1-phi2)
+cor_ar_2 = phi2 + phi1*cor_ar_1
+cor_ar_3 = phi1*cor_ar_2 + phi2*cor_ar_1
+cor_ar_1
+cor_ar_2
+cor_ar_3
+
+```
+
+## ARMA(2,2)
+```{r}
+#Bangkitkan model ARMA(2,2) dengan 𝜙1 = 0.4, 𝜙2 = 0.6, 𝜃1 = 0.5 dan 𝜃2 = 0.2 sebanyak 300 data (Manual dan dengan arima.sim)
+set.seed(2403)
+phi1=0.4
+phi2=0.6
+theta1=0.5
+theta2=0.2
+
+arma=rep(0,n)
+arma[1] <- wn[1]
+arma[2] <- wn[2]+phi1*arma[1]+theta1*wn[1]
+for (i in 3:n){
+  arma[i]=wn[i]+phi1*arma[i-1]+phi2*arma[i-2]+theta1*wn[i-1]+theta2*wn[i-2]
+}
+
+
+arma=ts(arma)
+arma22 <- arima.sim(list(order=c(2,0,2), ar=c(0.3, 0.4), ma=c(0.5, 0.2)), n=n)
+```
+
+## Plot ARMA(2,2)
+```{r}
+#Buat plot time series, plot ACF, plot PACF dan plot EACF. Idenifikasi apakah data tersebut stasioner
+par(mfrow=c(2,2))
+plot(arma,main="Time Series ARMA(2,2)")
+acf(arma,main="ACF ARMA(2,2)")
+pacf(arma,main="PACF ARMA(2,2)")
+eacf(arma,ar.max=3)
+```
+berdasarkan plot time series, plot ACF, plot PACF dan plot EACF, terlihat data yang dibangkitkan bergerak mengikuti pola seasonal. sehingga dapat dinyatakan bahwa data tersebut tidak stasioner.
+
+## Scatterplot ARMA(2,2)
+```{r}
+#Buat scatterplot antara 𝑌𝑡 dengan 𝑌𝑑−1, 𝑌𝑡 dengan 𝑌𝑑−2, 𝑌𝑡 dengan 𝑌𝑑−3
+yt_arma1 <- arma[-1]
+yt1_arma <- arma[-n]
+plot(yt_arma1,yt1_arma,main="Scatterplot Yt vs Yt-1")
+
+yt_arma2<- arma[-c(1,2)]
+yt2_arma <- arma[-c(n-1,n)]
+plot(yt_arma2,yt2_arma,main="Scatterplot Yt vs Yt-2")
+
+yt_arma3 <- arma[-c(1,2,3)]
+yt3_arma <- arma[-c(n-2,n-1,n)]
+plot(yt_arma3,yt3_arma,main="Scatterplot Yt vs Yt-3")
+```
+## Nilai Autokorelasi ARMA(2,2)
+```{r}
+#Hitung nilai autokorelasi dari data yang dibangkitkan
+cor(yt_arma1,yt1_arma)
+cor(yt_arma2,yt2_arma)
+cor(yt_arma3,yt3_arma)
+
+#yg teoritis gunakan rumus yg ada di ppt
+cor_arma_1 = (phi1*(1+theta1*theta2)+phi2*theta1)/(1+theta1^2+theta2^2)
+cor_arma_2 = (phi2+phi1*cor_arma_1+theta1*theta2)/(1+theta1^2+theta2^2)
+cor_arma_3 = phi1*cor_arma_2+phi2*cor_arma_1
+cor_arma_1
+cor_arma_2
+cor_arma_3
+```
+
+
+
