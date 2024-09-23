@@ -1,0 +1,140 @@
+---
+title: "Tugas-6-MPDW"
+author: "Fauzan Fajari"
+output: rmdformats::readthedown
+date: "2024-09-17"
+---
+
+# Data Lengkap
+Data yang digunakan adalah data IHSG selama 100 periode waktu. Data ini diambil dari Yahoo Finance.
+```{r}
+library(readxl)
+library(TSA)
+library(tseries)
+library(MASS)
+
+dt <- read_excel("/Users/fauzanfajari/Documents/Kuliah/V/MPDW/IHSG.xlsx", sheet = "Sheet1")
+head(dt)
+```
+## Time Series Plot
+```{r}
+dt.ts <- ts(dt$Harga)
+plot(dt.ts)
+points(dt.ts)
+```
+Berdasarakan plot di atas, data IHSG memiliki tren naik. Selain itu, data ini juga memiliki pola musiman yang tidak terlalu jelas.
+
+## Plot ACF, PACF
+Selanjutnya akan dibuat plot ACF dan PACF dari data IHSG untuk melihat model mana yang sesuai dengan data.
+```{r}
+acf(dt.ts)
+pacf(dt.ts)
+```
+Berdasarkan gambar diatas, terlihat bahwa plot acf dari data diatas memiliki pola tails off slowly, sedangkan plot pacf dari data diatas memiliki pola cut off pada lag pertama.
+
+## Uji ADF
+Selanjutnya akan dilakukan uji ADF untuk mengetahui apakah data IHSG stasioner atau tidak.
+```{r}
+adf.test(dt.ts)
+```
+Berdasarkan hasil uji ADF diatas, p-value memiliki nilai lebih  besar dari nilai alpha. sehingga dapat disimpulkan bahwa data IHSG tidak stasioner dalam rataan.
+
+## Plot Box-Cox
+Selanjutnya akan dilakukan plot box-cox untuk mengetahui apakah data IHSG stasioner dalam varians atau tidak
+```{r}
+index <- seq(1:100)
+bc = boxcox(dt.ts~index, lambda = seq(0,5,by=0.01))
+
+#Nilai Rounded Lambda
+lambda <- bc$x[which.max(bc$y)]
+lambda
+
+#Selang Kepercayaan
+bc$x[bc$y > max(bc$y) - 1/2 * qchisq(.95,1)]
+```
+berdasarkan plot box-cox diatas, nilai 1 masuk kedalam selang. sehingga dapat dikatakan bahwa data IHSG stasioner dalam varians.
+
+# Data Partisi 1
+Data yang digunakan adalah data IHSG selama 50 periode waktu. Data ini diambil dari Yahoo Finance.
+```{r}
+partisi1 <- dt[1:50,]
+head(partisi1)
+```
+
+## Time Series Plot
+```{r}
+partisi1.ts <- ts(partisi1$Harga)
+plot(partisi1.ts)
+points(partisi1.ts)
+```
+Berdasarakan plot di atas, data IHSG memiliki tren turun. selanjutnya akan diperiksa model yang sesuai dengan data serta kestasioneran dari data partisi 1.
+
+## Plot ACF, PACF
+```{r}
+acf(partisi1.ts)
+pacf(partisi1.ts)
+```
+Berdasarkan gambar diatas, terlihat bahwa plot acf dari data diatas memiliki pola tails off slowly, sedangkan plot pacf dari data diatas memiliki pola cut off pada lag pertama.
+
+## Uji ADF
+```{r}
+adf.test(partisi1.ts)
+```
+Berdasarkan hasil uji ADF diatas, p-value memiliki nilai lebih  besar dari nilai alpha. sehingga dapat disimpulkan bahwa data IHSG tidak stasioner dalam rataan.
+
+## Plot Box-Cox
+```{r}
+index <- seq(1:50)
+bc = boxcox(partisi1.ts~index, lambda = seq(-10,10,by=0.5))
+
+#Nilai Rounded Lambda
+lambda <- bc$x[which.max(bc$y)]
+lambda
+
+#Selang Kepercayaan
+bc$x[bc$y > max(bc$y) - 1/2 * qchisq(.95,1)]
+```
+berdasarkan plot box-cox diatas, nilai 1 masuk kedalam selang. sehingga dapat dikatakan bahwa data IHSG stasioner dalam varians.
+
+
+# Data Partisi 2
+Data yang digunakan adalah data IHSG selama 50 periode waktu. Data ini diambil dari Yahoo Finance.
+```{r}
+partisi2 <- dt[51:100,]
+head(partisi2)
+```
+
+## Time Series Plot
+```{r}
+partisi2.ts <- ts(partisi2$Harga)
+plot(partisi2.ts)
+points(partisi2.ts)
+```
+Berdasarakan plot di atas, data IHSG memiliki tren naik. selanjutnya akan diperiksa model yang sesuai dengan data serta kestasioneran dari data partisi 2.
+
+## Plot ACF, PACF
+```{r}
+acf(partisi2.ts)
+pacf(partisi2.ts)
+```
+Berdasarkan gambar diatas, terlihat bahwa plot acf dari data diatas memiliki pola tails off slowly, sedangkan plot pacf dari data diatas memiliki pola cut off pada lag pertama.
+
+## Uji ADF
+```{r}
+adf.test(partisi2.ts)
+```
+Berdasarkan hasil uji ADF diatas, p-value memiliki nilai lebih  besar dari nilai alpha. sehingga dapat disimpulkan bahwa data IHSG tidak stasioner dalam rataan.
+
+## Plot Box-Cox
+```{r}
+index <- seq(1:50)
+bc = boxcox(partisi2.ts~index, lambda = seq(-10,10,by=0.5))
+
+#Nilai Rounded Lambda
+lambda <- bc$x[which.max(bc$y)]
+lambda
+
+#Selang Kepercayaan
+bc$x[bc$y > max(bc$y) - 1/2 * qchisq(.95,1)]
+```
+berdasarkan plot box-cox diatas, nilai 1 tidak masuk kedalam selang. sehingga dapat dikatakan bahwa data IHSG partisi kedua tidak stasioner dalam varians.
