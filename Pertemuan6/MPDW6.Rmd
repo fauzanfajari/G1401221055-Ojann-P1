@@ -1,0 +1,150 @@
+---
+title: "MPDW-6"
+author: "Fauzan Fajari"
+output: rmdformats::readthedown
+date: "2024-09-30"
+---
+
+## Packages
+```{r}
+library(ggplot2)
+library(tsibble)
+library(tseries)
+library(MASS)
+library(forecast)
+library(TSA)
+library(TTR)
+library(aTSA)
+library(graphics)
+library(readxl)
+```
+
+## Data
+```{r}
+dt <- read_excel("/Users/fauzanfajari/Documents/Kuliah/V/MPDW/IHSG.xlsx", sheet = "Sheet1")
+head(dt)
+```
+Data yang digunakan adalah data IHSG selama 100 periode waktu. Data ini diambil dari Yahoo Finance.
+
+## Eksplorasi Data
+### Plot Time Series
+```{r}
+dt.ts <- ts(dt$Harga)
+plot(dt.ts)
+points(dt.ts)
+```
+Berdasarakan plot di atas, data IHSG memiliki tren naik. Selain itu, data ini juga memiliki pola musiman yang tidak terlalu jelas. selanjutnya, data ini akan dipecah menjadi data latih dan data uji.
+
+### Data Latih
+```{r}
+##ambil data latih 1:80
+dt.train <- dt.ts[1:80]
+train.ts <-ts(dt.train)
+plot.ts(train.ts)
+points(train.ts)
+```
+
+### Data Uji
+```{r}
+##ambil data uji 81:100
+dt.test <- dt.ts[81:100]
+test.ts <-ts(dt.test)
+plot.ts(test.ts)
+points(test.ts)
+```
+
+## Uji Stasioneritas Data Latih
+### Plot ACF dan PACF
+```{r}
+par(mfrow=c(2,2))
+acf(train.ts)
+pacf(train.ts)
+```
+Berdasarkan gambar diatas, terlihat bahwa plot acf dari data diatas memiliki pola tails off slowly, Hal ini juga menjadi indikasi bahwa data tidak stasioner dalam rataan. sedangkan plot pacf dari data diatas memiliki pola cut off pada lag pertama.
+
+### Uji ADF
+```{r}
+tseries::adf.test(train.ts)
+```
+Berdasarkan uji ADF tersebut, didapat *p-value* sebesar 0.6677 yang lebih besar dari taraf nyata 5% sehingga tak tolak $H_0$ dan menandakan bahwa data tidak stasioner dalam rataan. Hal ini sesuai dengan hasil eksplorasi menggunakan plot time series dan plot ACF, sehingga ketidakstasioneran model kedepannya harus ditangani
+
+### Plot Box-Cox
+```{r}
+index <- seq(1:80)
+bc = boxcox(train.ts~index, lambda = seq(-10,50,by=0.5))
+
+##Nilai lambda optimal
+lambda <- bc$x[which.max(bc$y)]
+lambda
+```
+berdasarkan plot diatas, terlihat bahwa nilai 1 tidak masuk dalam selang kepercayaan sehingga dapat dikatakan bahwa data tersebut tidak stasioner dalam varians. Selanjutnya, data akan di transformasi menggunakan metode Box-Cox.
+
+## Penanganan Ketidakstasioneran
+### Transformasi Box-Cox
+```{r}
+train.bc <- BoxCox(train.ts, lambda)
+plot.ts(train.bc)
+```
+
+### Differencing
+```{r}
+diff2 <- diff(train.bc, differences = 2)
+plot.ts(diff2)
+```
+Berdasarkan plot data deret waktu, terlihat bahwa data sudah stasioner dalam rataan ditandai dengan data bergerak pada nilai tengah tertentu (tidak terdapat trend ataupun musiman pada data)
+
+### Plot ACF
+```{r}
+acf(diff2)
+```
+Berdasarakan plot diatas, terlihat bahwa plot acf dari data diatas memiliki pola cut off pada lag pertama. Hal ini menandakan bahwa data sudah stasioner dalam rataan. dan jika plot pacf dianggap tails off, maka model yang memungkinkan adalam ARIMA(0,2,1)
+
+### Plot EACF
+```{r}
+eacf(diff2)
+```
+Berdasarkan plot diatas, terlihat bahwa model yang memungkinkan adalah ARIMA(0,2,1), ARIMA(1,2,1), ARIMA(2,2,1), ARIMA(1,2,2)
+
+## Pendugaan Parameter Tentatif
+### ARIMA(0,2,1)
+```{r}
+model1.da=Arima(diff2, order=c(0,2,1),method="ML")
+summary(model1.da)
+lmtest::coeftest(model1.da)
+```
+
+### ARIMA(1,2,1)
+```{r}
+model2.da=Arima(diff2, order=c(1,2,1),method="ML")
+summary(model2.da)
+lmtest::coeftest(model2.da)
+```
+
+### ARIMA(2,2,1)
+```{r}
+model3.da=Arima(diff2, order=c(2,2,1),method="ML")
+summary(model3.da)
+lmtest::coeftest(model3.da)
+```
+
+### ARIMA(1,2,2)
+```{r}
+model4.da=Arima(diff2, order=c(1,2,2),method="ML")
+summary(model4.da)
+lmtest::coeftest(model4.da)
+```
+Berdarsarkan pemodelan, model ARIMA(1,2,2) memiliki nilai AIC terkecil dibandingkan model lainnya. Selanjutnya, model ini akan digunakan untuk melakukan analisis sisaan
+
+## Analisis Sisaan
+```{r}
+#Eksplorasi 
+sisaan.da <- model4.da$residuals 
+par(mfrow=c(2,2)) 
+qqnorm(sisaan.da) 
+qqline(sisaan.da, col = "blue", lwd = 2) 
+plot(c(1:length(sisaan.da)),sisaan.da) 
+acf(sisaan.da) 
+pacf(sisaan.da) 
+par(mfrow = c(1,1))
+```
+
